@@ -1,1 +1,1 @@
-# diffusion-model
+# Diffusion model
