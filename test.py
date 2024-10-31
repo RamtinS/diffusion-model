@@ -9,9 +9,9 @@ import random
 
 # Hyperparameters
 batch_size = 32
-time_steps = 500
+time_steps = 200
 num_epochs = 5
-learning_rate = 1e-6
+learning_rate = 1e-4
 
 # Add noise
 
@@ -25,10 +25,10 @@ alphas = 1 - betas
 alpha_bars = torch.cumprod(alphas, dim=0)  # alpha_bar_t at each timestep
 
 # Add noise to image x0 at time step t.
-def add_noise(x0, t):
+def add_noise(x0, t, noise_floor=1e-5):
     alpha_bar_t = alpha_bars[t].view(-1, 1, 1, 1)
     noise = torch.randn_like(x0)
-    x_t = torch.sqrt(alpha_bar_t) * x0 + torch.sqrt(1 - alpha_bar_t) * noise
+    x_t = torch.sqrt(alpha_bar_t) * x0 + torch.sqrt(1 - alpha_bar_t + noise_floor) * noise
     return x_t, noise
 
 
@@ -83,7 +83,7 @@ class UNet(nn.Module):
 
 
   def loss(self, predicted_noise, actual_noise, t):
-    variance_weight = 1 / (1 - alpha_bars[t])
+    variance_weight = torch.sqrt(1 - alpha_bars[t])
     return nn.MSELoss()(predicted_noise, actual_noise) * variance_weight
 
 
@@ -162,10 +162,11 @@ def reverse_diffusion(x_t, num_steps=time_steps):
 
       # Compute the previous image (denoising step)
       alpha_bar_t = alpha_bars[t].view(-1, 1, 1, 1)
-      x_t = (x_t - (1 - alpha_bar_t).sqrt() * predicted_noise) / alpha_bar_t.sqrt()
+      alpha_bar_t_minus_1 = alpha_bars[max(t - 1, 0)].view(-1, 1, 1, 1)
+      x_t = (x_t - (1 - alpha_bar_t).sqrt() * predicted_noise) / alpha_bar_t.sqrt() * alpha_bar_t_minus_1.sqrt()
 
       # Save intermediate steps
-      if t % 100 == 0:
+      if t % 50 == 0:
         images.append(x_t.squeeze().numpy())
 
     # Visualize intermediate denoising steps
