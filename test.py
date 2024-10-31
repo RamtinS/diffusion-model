@@ -188,36 +188,27 @@ def reverse_diffusion(x_t, num_steps=time_steps):
 
 
 
-# Test the model on a noisy image
-x0_test, _ = MNIST(root='.', train=True, download=True, transform=transforms.ToTensor())[0]  # Load an image
-x0_test = x0_test.to(gpu)
-x0_test = x0_test.unsqueeze(0)
-x_t_test, _ = add_noise(x0_test, time_steps-1)  # Add noise to the test image
-x_t_test = x_t_test.to(gpu)
-# Reverse the diffusion process
-recovered_image = reverse_diffusion(x_t_test, num_steps=time_steps)
+def displayImages(original_image):
+  original_image = original_image.to(gpu)
+  original_image = original_image.unsqueeze(0)
 
-# Convert tensors to numpy for plotting
-recovered_image_np = recovered_image.squeeze().cpu().numpy()
+  noised_image, _ = add_noise(original_image, time_steps - 1)
+  noised_image = noised_image.to(gpu)
 
-x0_test_np = x0_test.cpu().squeeze().numpy()
-x_t_test_np = x_t_test.cpu().squeeze().numpy()
+  recovered_image = reverse_diffusion(noised_image, num_steps=time_steps)
 
-# Plot the original, noisy, and recovered images
-plt.figure(figsize=(12, 4))
-plt.subplot(1, 3, 1)
-plt.title("Original Image (x0)")
-plt.imshow(x0_test_np, cmap='gray')
-plt.axis('off')
+  plt.figure(figsize=(12, 4))
+  for i, image_info in enumerate([("Original image", original_image),
+                           ("Noised", noised_image),
+                           ("Recovered", recovered_image)]):
 
-plt.subplot(1, 3, 2)
-plt.title("Noisy Image (x_t)")
-plt.imshow(x_t_test_np, cmap='gray')
-plt.axis('off')
+    plt.subplot(1, 3, i+1)
+    plt.title(image_info[0])
+    plt.imshow(image_info[1].cpu().squeeze().numpy(), cmap='gray')
+    plt.axis('off')
 
-plt.subplot(1, 3, 3)
-plt.title("Recovered Image")
-plt.imshow(recovered_image_np, cmap='gray')
-plt.axis('off')
+  plt.show()
 
-plt.show()
+first_image, _ = MNIST(root='.', train=True, download=True, transform=transforms.ToTensor())[0]
+displayImages(first_image)
+
