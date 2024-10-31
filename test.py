@@ -1,17 +1,23 @@
 import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
+from torch.xpu import device
 from torchvision.datasets import MNIST
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 from torch.utils.data import Subset
 import random
 
+from deviceUtility import get_best_available_device
+
 # Hyperparameters
 batch_size = 32
-time_steps = 500
+time_steps = 1000
 num_epochs = 5
 learning_rate = 1e-6
+
+#get device, either mps or cuda, or cpu if not available
+gpu = get_best_available_device()
 
 # Add noise
 
@@ -20,15 +26,15 @@ def get_beta_schedule(step_size, start_value=0.0001, end_value=0.005):
     return torch.linspace(start_value, end_value, step_size)
 
 # Initialize beta schedule, alphas, and alpha bars (cumulative product of alphas)
-betas = get_beta_schedule(time_steps)
+betas = get_beta_schedule(time_steps).to(gpu)
 alphas = 1 - betas
 alpha_bars = torch.cumprod(alphas, dim=0)  # alpha_bar_t at each timestep
 
 # Add noise to image x0 at time step t.
 def add_noise(x0, t):
-    alpha_bar_t = alpha_bars[t].view(-1, 1, 1, 1)
-    noise = torch.randn_like(x0)
-    x_t = torch.sqrt(alpha_bar_t) * x0 + torch.sqrt(1 - alpha_bar_t) * noise
+    alpha_bar_t = alpha_bars[t].view(-1, 1, 1, 1).to(gpu)
+    noise = torch.randn_like(x0, device=gpu)
+    x_t = torch.sqrt(alpha_bar_t).to(gpu) * x0 + torch.sqrt(1 - alpha_bar_t).to(gpu) * noise
     return x_t, noise
 
 
@@ -92,7 +98,9 @@ class UNet(nn.Module):
     for epoch in range(num_epochs):
       loss = 0
       counter = 0
-      for image, label in data:
+      for image, _ in data:
+        image = image.to(gpu)
+
         # Add noise to the original images
         t = random.randint(0, time_steps - 1)
         noised_image, actual_noise = add_noise(image, t)
@@ -145,7 +153,7 @@ def load_data(batch_size=batch_size, subset_fraction=0.05):
 
 
 # Train model
-model = UNet()
+model = UNet().to(gpu)
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 dataloader = load_data(batch_size)
 model.train_model(optimizer, dataloader, num_epochs=num_epochs)
@@ -166,7 +174,7 @@ def reverse_diffusion(x_t, num_steps=time_steps):
 
       # Save intermediate steps
       if t % 100 == 0:
-        images.append(x_t.squeeze().numpy())
+        images.append(x_t.squeeze().cpu().numpy())
 
     # Visualize intermediate denoising steps
     for i, img in enumerate(images):
@@ -182,16 +190,18 @@ def reverse_diffusion(x_t, num_steps=time_steps):
 
 # Test the model on a noisy image
 x0_test, _ = MNIST(root='.', train=True, download=True, transform=transforms.ToTensor())[0]  # Load an image
-x0_test = x0_test.unsqueeze(0)  # Add batch dimension and move to device
+x0_test = x0_test.to(gpu)
+x0_test = x0_test.unsqueeze(0)
 x_t_test, _ = add_noise(x0_test, time_steps-1)  # Add noise to the test image
-
+x_t_test = x_t_test.to(gpu)
 # Reverse the diffusion process
 recovered_image = reverse_diffusion(x_t_test, num_steps=time_steps)
 
 # Convert tensors to numpy for plotting
-recovered_image_np = recovered_image.squeeze().numpy()
-x0_test_np = x0_test.squeeze().numpy()
-x_t_test_np = x_t_test.squeeze().numpy()
+recovered_image_np = recovered_image.squeeze().cpu().numpy()
+
+x0_test_np = x0_test.cpu().squeeze().numpy()
+x_t_test_np = x_t_test.cpu().squeeze().numpy()
 
 # Plot the original, noisy, and recovered images
 plt.figure(figsize=(12, 4))
