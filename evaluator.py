@@ -4,7 +4,7 @@ import torchvision
 
 BATCH_COUNT = 600
 LR = 0.001
-EPOCH_NUM = 10
+EPOCH_NUM = 40
 class ConvolutionalNeuralNetworkModel(nn.Module):
     def __init__(self):
         super(ConvolutionalNeuralNetworkModel, self).__init__()
