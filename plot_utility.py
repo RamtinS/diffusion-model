@@ -83,19 +83,4 @@ def get_classification_distribution_batch_sum(*,
         plt.show()
     return distributionSum
 
-def calculate_inception_score(probabilities_list, eps=1E-16):
-    print(f"Handling {len(probabilities_list)} batches")
-    print(f"With size {probabilities_list[0].shape}")
 
-    p_y_given_x = torch.cat(probabilities_list, dim=0)
-    print(p_y_given_x)
-
-    p_y = p_y_given_x.mean(dim=0, keepdim=True)
-    print(p_y)
-
-    kl_divergence = p_y_given_x * (torch.log(p_y_given_x + eps) - torch.log(p_y + eps))
-    sum_kl_divergence = kl_divergence.sum(dim=1)
-    avg_kl_divergence = sum_kl_divergence.mean()
-
-    is_score = torch.exp(avg_kl_divergence)
-    return is_score
