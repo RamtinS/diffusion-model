@@ -76,5 +76,5 @@ def get_MNIST_evaluator(*, device, create_new = False):
         model.train_model(device=device)
         torch.save(model.state_dict(), path)
     else:
-        model.load_state_dict(torch.load(path, map_location=device))
+        model.load_state_dict(torch.load(path, map_location=device, weights_only=True))
     return model
