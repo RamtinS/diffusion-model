@@ -4,7 +4,7 @@ import torchvision
 
 BATCH_COUNT = 600
 LR = 0.001
-EPOCH_NUM = 40
+EPOCH_NUM = 100
 class ConvolutionalNeuralNetworkModel(nn.Module):
     def __init__(self):
         super(ConvolutionalNeuralNetworkModel, self).__init__()
@@ -67,7 +67,14 @@ class ConvolutionalNeuralNetworkModel(nn.Module):
 
             print(f"accuracy = {self.accuracy(x_test, y_test).item()}")
 
-def get_MNIST_evaluator(*, device):
+def get_MNIST_evaluator(*, device, create_new = False):
+
+    path = "evaluator/inception-mnist-v1"
     model = ConvolutionalNeuralNetworkModel().to(device)
-    model.train_model(device=device)
+
+    if create_new:
+        model.train_model(device=device)
+        torch.save(model.state_dict(), path)
+    else:
+        model.load_state_dict(torch.load(path, map_location=device))
     return model
