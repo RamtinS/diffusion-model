@@ -205,3 +205,5 @@ fabric.properties
 .idea/*
 
 MNIST/
+images/
+generated_images/
