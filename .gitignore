@@ -207,3 +207,4 @@ fabric.properties
 MNIST/
 images/
 generated_images/
+dataset/
