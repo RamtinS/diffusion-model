@@ -1,8 +1,6 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Created on Sat Mar 20 13:06:24 2021
-@author: pedrofRodenas
+@author: pedroofRodenas
+Available at https://gist.github.com/pedrofrodenas/4ab13c119927da61153a881a20480815
 """
 import os
 
@@ -65,12 +63,15 @@ class SaverMNIST():
             df.to_csv(store_csv_path)
 
 
-if __name__ == '__main__':
-    mnist_saver = SaverMNIST(image_train_path='dataset/train',
-                             image_test_path='dataset/test',
-                             csv_train_path='dataset/train.csv',
-                             csv_test_path='dataset/test.csv')
-
-
-    # Write files into disk
-    mnist_saver.run()
+def add_mnist_original_images_if_not_exist():
+    folder_name = 'dataset'
+    os.makedirs(folder_name, exist_ok=True)
+    if len(os.listdir(folder_name)) == 0:
+        mnist_saver = SaverMNIST(image_train_path=f'{folder_name}/train',
+                                 image_test_path=f'{folder_name}/test',
+                                 csv_train_path=f'{folder_name}/train.csv',
+                                 csv_test_path=f'{folder_name}/test.csv')
+        mnist_saver.run()
+        print(f"The mnist images for FID evaluation have been added to the {folder_name}")
+    else:
+        print("The mnist images for FID evaluation already exist, nothing to be done")
