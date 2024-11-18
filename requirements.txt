@@ -1,0 +1,10 @@
+certifi==2024.8.30
+matplotlib==3.9.2
+torch==2.5.1
+torchvision==0.20.1
+tensorboard==2.18.0
+tqdm==4.67.0
+pandas==2.2.3
+pillow==10.4.0
+tensorflow==2.18.0
+numpy==2.0.2
